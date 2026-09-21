@@ -34,7 +34,7 @@ PixelOffice 是一款像素画风的互联网公司经营模拟项目。
 ## 🖼️ Game Preview
 
 <p align="center">
-  <img src="http://nons.fukit.cn/autoupload/fr/xU_2dj8Ti0JtPFC98KYMwaG2Ii_s56f9h50SjiHRctKyl5f0KlZfm6UsKj-HyTuv/20260921/IUtk/1479X861/e421082d-298c-4c01-bfc6-2f8626741523.png" alt="PixelOffice 游戏内办公室全景" width="900">
+ [![PixelOffice Logo](https://i.postimg.cc/bvfYDnM7/e421082d-298c-4c01-bfc6-2f8626741523.png)](https://postimg.cc/tsDG8s9k)
 </p>
 
 > 上图为游戏内办公室全景，包含开发部、项目部、财务部、总经办、档案室、休息区等完整区域
