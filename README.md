@@ -34,7 +34,7 @@ PixelOffice 是一款像素画风的互联网公司经营模拟项目。
 
 ## 🖼️ Game Preview
 <p align="center">
-  <img src="https://img.remit.ee/i/beis5ddP13GC" alt="beis5ddP13GC.png"  wdith='900' />
+  <img src="https://img.remit.ee/i/beis5ddP13GC" alt="beis5ddP13GC.png" />
 </p>
 
 > 上图为游戏内办公室全景，包含开发部、项目部、财务部、总经办、档案室、休息区等完整区域
@@ -42,8 +42,8 @@ PixelOffice 是一款像素画风的互联网公司经营模拟项目。
 ## 🛠️ Technology Stack
 ```mermaid
 mindmap
-  root((Spring Cloud Alibaba + AI<br/>微服务技术方案)):::rootStyle
-    后端基础(Spring Cloud Alibaba):::backend
+  root((Spring Cloud Alibaba + AI<br/>微服务技术方案))
+    后端基础(Spring Cloud Alibaba)
       核心框架
         Spring Boot 3.2.x
         Spring Cloud 2023.0.x Leyton
@@ -77,7 +77,7 @@ mindmap
         分页、排序统一规范
         Feign内部接口与对外API隔离
         敏感字段自动脱敏
-    AI模块(独立 ai-service 微服务):::ai
+    AI模块(独立 ai-service 微服务)
       AI编排框架：LangChain4j
       大模型接入方案
         公有大模型API：通义千问/文心一言/豆包
@@ -98,7 +98,7 @@ mindmap
         Redis：对话会话记忆
         Nacos：动态管理Prompt模板、模型参数
         Sentinel：AI接口限流，控制调用成本
-    前端技术栈:::frontend
+    前端技术栈
       基础框架：Vue3 + Vite
       UI库：Element Plus
       状态/路由：Pinia + Vue Router
@@ -108,7 +108,7 @@ mindmap
         文件上传（知识库文档导入）
         富文本AI辅助编辑
       代码规范：ESLint + Prettier
-    测试体系:::test
+    测试体系
       基础测试
         JUnit5 + Mockito + AssertJ
         TestContainers集成测试
@@ -120,7 +120,7 @@ mindmap
         向量检索召回效果测试
         提示词注入安全测试
         模型超时熔断降级验证
-    运维 & 可观测性<br>PlumeLog / ELK / ETL:::ops
+    运维 & 可观测性<br>PlumeLog / ELK / ETL
       容器编排：Docker + K8s（开发Docker Compose）
       指标监控：Prometheus + Grafana
       链路追踪：SkyWalking
@@ -136,7 +136,7 @@ mindmap
         Token消耗统计、模型调用成功率
         Milvus查询耗时
         GPU使用率&显存（私有化模型）
-    CI/CD流水线:::cicd
+    CI/CD流水线
       代码仓库：GitLab/Gitee
       CI工具：Jenkins（备选GitLab CI）
       制品仓库：Nexus3(Maven) + Harbor(Docker镜像)
@@ -149,27 +149,17 @@ mindmap
         K8s部署测试环境
         人工审批 → 生产部署
       版本规范：GitFlow分支管理
-    备选降级方案（资源不足）:::backup
+    备选降级方案（资源不足）
       不使用K8s：Jar包 + systemd托管
       不部署Milvus：Redis Vector承载小规模知识库
       无GPU：仅调用公有大模型API
       轻量日志：仅PlumeLog，简化ELK部署
-    避坑要点:::warn
+    避坑要点
       Spring全家桶版本严格对齐
       AI接口强制限流，控制token成本
       Prompt放Nacos配置中心，禁止硬编码
       敏感业务优先私有化模型，禁止公网API
       长文本AI任务异步化（RocketMQ）
       安全审计日志不可篡改，独立存储
-
-classDef rootStyle fill:#2c3e50,color:#fff,stroke:#1abc9c,stroke-width:2px
-classDef backend fill:#409EFF,color:#fff
-classDef ai fill:#67C23A,color:#fff
-classDef frontend fill:#E6A23C,color:#fff
-classDef test fill:#F56C6C,color:#fff
-classDef ops fill:#9B59B6,color:#fff
-classDef cicd fill:#17A2B8,color:#fff
-classDef backup fill:#8492A6,color:#fff
-classDef warn fill:#E74C3C,color:#fff
 
 ## 📁 Project Structure
