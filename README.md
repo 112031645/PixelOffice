@@ -1,7 +1,7 @@
 # PixelOffice
 
 <p align="center">
-  <img src="https://s1.aigei.com/src/img/png/96/96f6053e8a7847f0a3480c601dfb6b2c.png?e=2051020800&token=P7S2Xpzfz11vAkASLTkfHN7Fw-oOZBecqeJaxypL:iXLAPUb3Tc4j1Kw9kspNqymCrP8=" alt="PixelOffice 像素猫猫" width="50" >
+  <img src="(https://i.postimg.cc/Pqv6cp5C/96f6053e8a7847f0a3480c601dfb6b2c-removebg-preview.png" alt="PixelOffice 像素猫猫" width="50" >
 </p>
 
 <p align="center">
