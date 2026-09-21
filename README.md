@@ -40,6 +40,14 @@ PixelOffice 是一款像素画风的互联网公司经营模拟项目。
 > 上图为游戏内办公室全景，包含开发部、项目部、财务部、总经办、档案室、休息区等完整区域
 
 ## 🛠️ Technology Stack
+# 🚀 Spring Cloud Alibaba + AI 微服务项目
+> 基于Spring Cloud Alibaba搭建的微服务平台，集成RAG大模型能力、日志审计PlumeLog、ELK检索、ETL数据处理，提供完整的后端、前端、测试、运维与CI/CD整套解决方案。
+
+## 📋 技术选型全景图
+> 下方为彩色思维导图预览图（本地Mermaid Live Editor导出）
+![技术选型思维导图](./docs/tech-mindmap.png)
+
+## 🧠 Mermaid 思维导图（GitHub原生渲染）
 ```mermaid
 mindmap
   root((Spring Cloud Alibaba + AI<br/>微服务技术方案))
@@ -161,5 +169,6 @@ mindmap
       敏感业务优先私有化模型，禁止公网API
       长文本AI任务异步化（RocketMQ）
       安全审计日志不可篡改，独立存储
+
 
 ## 📁 Project Structure
