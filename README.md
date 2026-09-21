@@ -1,7 +1,7 @@
 # PixelOffice
 
 <p align="center">
-  <img src="https://s1.aigei.com/src/img/png/96/96f6053e8a7847f0a3480c601dfb6b2c.png?e=2051020800&token=P7S2Xpzfz11vAkASLTkfHN7Fw-oOZBecqeJaxypL:iXLAPUb3Tc4j1Kw9kspNqymCrP8=" alt="PixelOffice 像素猫猫" width="100">
+  <img src="https://s1.aigei.com/src/img/png/96/96f6053e8a7847f0a3480c601dfb6b2c.png?e=2051020800&token=P7S2Xpzfz11vAkASLTkfHN7Fw-oOZBecqeJaxypL:iXLAPUb3Tc4j1Kw9kspNqymCrP8=" alt="PixelOffice 像素猫猫" width="50">
 </p>
 
 <p align="center">
@@ -34,7 +34,7 @@ PixelOffice 是一款像素画风的互联网公司经营模拟项目。
 ## 🖼️ Game Preview
 
 <p align="center">
-  <img src="https://img.remit.ee/i/beis5ddP13GC" alt="PixelOffice 游戏内办公室全景" width="900">
+  <img src="https://img2.tofaka.com/autoupload/fr/xU_2dj8Ti0JtPFC98KYMwaG2Ii_s56f9h50SjiHRctKyl5f0KlZfm6UsKj-HyTuv/20260921/IUtk/1479X861/e421082d-298c-4c01-bfc6-2f8626741523.png" alt="PixelOffice 游戏内办公室全景" width="900">
 </p>
 
 > 上图为游戏内办公室全景，包含开发部、项目部、财务部、总经办、档案室、休息区等完整区域
