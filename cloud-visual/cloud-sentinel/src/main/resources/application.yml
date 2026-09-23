@@ -1,0 +1,58 @@
+# ============================================================================
+# cloud-sentinel —— Sentinel Dashboard 控制台本地启动配置
+# ----------------------------------------------------------------------------
+# 本模块通过 JVM 内嵌方式拉起 sentinel-dashboard 1.8.6（Spring Boot 2.5.12）。
+#
+# ★ 端口调整（用户要求）：Sentinel 默认端口是 8080，但本项目统一用 8080 给
+#   cloud-getway 网关做唯一入口，故把 Sentinel 控制台迁到 8718，避免端口冲突。
+#   可用环境变量 / -D 覆盖： -DSENTINEL_DASHBOARD_PORT=9090 等。
+#
+# ★ 配置权威性问题（与 cloud-xxl-job 同款）：
+#   sentinel-dashboard 官方 fat jar 自带 application.properties（含 auth.* / servlet.* /
+#   logging.* 等键），被打进 lib/sentinel-dashboard-1.8.6-classes.jar 根路径，
+#   与本文件同处 classpath 会争用配置、优先级打架。已将该 classes jar 内的
+#   application.properties 剥离，因此【本 application.yml 现在是唯一配置来源】，
+#   并原样补回官方 properties 里的非默认键（auth / servlet / logging / version），
+#   保证控制台登录、编码、日志、静态资源正常。
+# ============================================================================
+
+server:
+  # Sentinel Dashboard 控制台端口（已避开网关 8080）
+  port: ${SENTINEL_DASHBOARD_PORT:8718}
+  servlet:
+    # —— 官方 application.properties 中的 servlet 编码设置（原样补回）——
+    encoding:
+      force: true
+      charset: UTF-8
+      enabled: true
+    # cookie 名称（控制台会话）
+    session:
+      cookie:
+        name: sentinel_dashboard_cookie
+
+spring:
+  application:
+    name: cloud-sentinel
+
+# —— 官方 application.properties 中的 logging 设置（原样补回）——
+logging:
+  level:
+    org.springframework.web: INFO
+  file:
+    name: ${user.home}/logs/csp/sentinel-dashboard.log
+  pattern:
+    file: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
+
+# —— 官方 application.properties 中的 auth 设置（原样补回）——
+# 控制台默认开启登录，账号 / 密码均为 sentinel
+auth:
+  filter:
+    exclude-urls: /,/auth/login,/auth/logout,/registry/machine,/version
+    exclude-url-suffixes: htm,html,js,css,map,ico,ttf,woff,png
+  username: sentinel
+  password: sentinel
+
+# 控制台版本号（dashboard 启动时会读取，原样补回）
+sentinel:
+  dashboard:
+    version: 1.8.6

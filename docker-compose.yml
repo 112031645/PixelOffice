@@ -1,0 +1,164 @@
+# ============================================================
+# Docker Compose - 基础中间件环境
+# 启动：docker compose up -d
+# ============================================================
+services:
+  # ---------- Nacos 注册/配置中心 ----------
+  nacos:
+    image: nacos/nacos-server:v2.3.0
+    container_name: nacos
+    environment:
+      - MODE=standalone
+      - NACOS_AUTH_ENABLE=false
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    volumes:
+      - ./data/nacos/logs:/home/nacos/logs
+    networks:
+      - cloud-net
+
+  # ---------- MySQL ----------
+  mysql:
+    image: mysql:8.0.33
+    container_name: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+      - MYSQL_DATABASE=cloud_db
+      - TZ=Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
+    networks:
+      - cloud-net
+
+  # ---------- Redis ----------
+  redis:
+    image: redis:7.2
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - cloud-net
+
+  # ---------- RocketMQ ----------
+  rocketmq-namesrv:
+    image: apache/rocketmq:5.1.4
+    container_name: rocketmq-namesrv
+    command: sh mqnamesrv
+    ports:
+      - "9876:9876"
+    networks:
+      - cloud-net
+
+  rocketmq-broker:
+    image: apache/rocketmq:5.1.4
+    container_name: rocketmq-broker
+    command: sh mqbroker -n rocketmq-namesrv:9876 --enable-proxy
+    ports:
+      - "10911:10911"
+      - "8081:8081"
+    environment:
+      - NAMESRV_ADDR=rocketmq-namesrv:9876
+    depends_on:
+      - rocketmq-namesrv
+    networks:
+      - cloud-net
+
+  # ---------- MinIO ----------
+  minio:
+    image: minio/minio:RELEASE.2024-01-01T00-00-00Z
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./data/minio:/data
+    networks:
+      - cloud-net
+
+  # ---------- Seata ----------
+  seata:
+    image: seataio/seata-server:2.0.0
+    container_name: seata
+    environment:
+      - SEATA_IP=seata
+      - SEATA_PORT=8091
+      - STORE_MODE=db
+    ports:
+      - "8091:8091"
+      - "7091:7091"
+    depends_on:
+      - nacos
+      - mysql
+    networks:
+      - cloud-net
+
+  # ---------- Sentinel 控制台 ----------
+  sentinel:
+    image: bladex/sentinel-dashboard:1.8.6
+    container_name: sentinel
+    ports:
+      - "8858:8858"
+    networks:
+      - cloud-net
+
+  # ---------- Prometheus ----------
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - cloud-net
+
+  # ---------- Grafana ----------
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+    networks:
+      - cloud-net
+
+  # ---------- SkyWalking OAP ----------
+  skywalking-oap:
+    image: apache/skywalking-oap-server:9.6.0
+    container_name: skywalking-oap
+    ports:
+      - "11800:11800"
+      - "12800:12800"
+    networks:
+      - cloud-net
+
+  # ---------- SkyWalking UI ----------
+  skywalking-ui:
+    image: apache/skywalking-ui:9.6.0
+    container_name: skywalking-ui
+    ports:
+      - "8080:8080"
+    environment:
+      - SW_OAP_ADDRESS=http://skywalking-oap:12800
+    depends_on:
+      - skywalking-oap
+    networks:
+      - cloud-net
+
+networks:
+  cloud-net:
+    driver: bridge

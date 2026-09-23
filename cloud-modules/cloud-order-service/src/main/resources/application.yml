@@ -1,0 +1,70 @@
+# ============================================================
+# 订单服务 - application.yml
+# ============================================================
+server:
+  port: 8082
+
+spring:
+  profiles:
+    active: dev
+
+  # —— Sentinel 本地兜底配置 ——
+  # 指向内嵌 Sentinel 控制台（端口 8718）
+  cloud:
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD_ADDR:127.0.0.1:8718}
+        # 与 user-service 的 8721 区分，避免同机端口冲突；不显式设置时默认 8719 会自增
+        port: 8722
+      eager: true
+
+  # —— RocketMQ 本地兜底配置 ——
+  rocketmq:
+    name-server: ${ROCKETMQ_ADDR:127.0.0.1:9876}
+    producer:
+      group: ${spring.application.name}-producer-group
+
+# —— Seata 分布式事务（file 单机模式，连接内嵌 Seata TC，事务端口 8091）——
+seata:
+  enabled: true
+  tx-service-group: cloud-order-service-group
+  registry:
+    type: file
+  config:
+    type: file
+  service:
+    vgroup-mapping:
+      cloud-order-service-group: default
+    grouplist:
+      default: ${SEATA_ADDR:127.0.0.1:8091}
+  enable-auto-data-source-proxy: true
+
+# MyBatis-Plus
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.cloud.order.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# Knife4j
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+  api-docs:
+    enabled: true
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+
+# Actuator / Prometheus
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  metrics:
+    tags:
+      application: ${spring.application.name}

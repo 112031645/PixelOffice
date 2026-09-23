@@ -1,0 +1,56 @@
+# ============================================================
+# 用户服务 - bootstrap.yml
+# 作用：在 Spring 容器启动早期阶段加载，用于连接 Nacos 配置中心，
+#       拉取远程配置（数据源、Redis、RocketMQ、MinIO 等具体数据）。
+# 注意：此文件只放「Nacos 连接信息」和「要加载哪些配置集」，
+#       具体的业务配置数据统一放在 Nacos 控制台中维护。
+# ============================================================
+spring:
+  application:
+    name: cloud-user-service
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      # ---------- Nacos 服务注册发现 ----------
+      discovery:
+        server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+        namespace: ${NACOS_NAMESPACE:public}
+        group: CLOUD_GROUP
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+      # ---------- Nacos 配置中心 ----------
+      config:
+        server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+        namespace: ${NACOS_NAMESPACE:public}
+        group: CLOUD_GROUP
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+        file-extension: yaml
+        # 共享配置（所有服务公用），按顺序加载，后面的覆盖前面的
+        shared-configs:
+          - data-id: common.yaml
+            group: CLOUD_GROUP
+            refresh: true
+          - data-id: mysql.yaml
+            group: CLOUD_GROUP
+            refresh: true
+          - data-id: redis.yaml
+            group: CLOUD_GROUP
+            refresh: true
+          - data-id: rocketmq.yaml
+            group: CLOUD_GROUP
+            refresh: true
+          - data-id: minio.yaml
+            group: CLOUD_GROUP
+            refresh: true
+        # 本服务扩展配置
+        extension-configs:
+          - data-id: cloud-user-service.yaml
+            group: CLOUD_GROUP
+            refresh: true
+# tx-service-group 必须与 application.yml 中 seata.service.vgroup-mapping 的 key 一致，
+# 否则 Seata 找不到对应的 TC 集群映射（首个全局事务会报 no available service / 无映射）。
+# 这里与 order-service 保持同一约定：<服务名>-group。
+seata:
+  tx-service-group: cloud-user-service-group

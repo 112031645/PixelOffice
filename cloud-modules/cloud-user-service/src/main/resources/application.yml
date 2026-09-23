@@ -1,0 +1,80 @@
+# ============================================================
+# 用户服务 - application.yml
+# 作用：本地兜底配置，Nacos 中未配置时使用。
+#       实际生产中数据源等敏感配置应在 Nacos 中维护。
+# ============================================================
+server:
+  port: 8081
+  servlet:
+    context-path: /
+
+spring:
+  profiles:
+    active: dev
+
+  # —— Sentinel 本地兜底配置 ——
+  # 指向内嵌 Sentinel 控制台（端口已从默认 8080 改为 8718，给网关 8080 让路）
+  cloud:
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD_ADDR:127.0.0.1:8718}
+        # Sentinel 客户端接收控制台规则推送的端口；同机多服务需各不相同（默认 8719 会自增）
+        port: 8721
+      eager: true   # 启动即向控制台注册，不必等首次请求
+
+  # —— RocketMQ 本地兜底配置 ——
+  # rocketmq-spring-boot-starter 的 RocketMQAutoConfiguration 需要 spring.rocketmq.name-server
+  # （生产者还需 spring.rocketmq.producer.group）才会创建 RocketMQTemplate Bean；
+  # 否则启动报「RocketMQTemplate ... could not be found」。
+  # Nacos 的 rocketmq.yaml（若已配置）优先级更高会覆盖此处；此块仅作 Nacos 不可用时的兜底，
+  # 保证本地不连 Nacos 也能起服务。实际 name-server 请指向你本机 / 远端的 Namesrv 地址。
+  rocketmq:
+    name-server: ${ROCKETMQ_ADDR:127.0.0.1:9876}
+    producer:
+      group: ${spring.application.name}-producer-group
+
+# —— Seata 分布式事务（file 单机模式，连接内嵌 Seata TC，事务端口 8091）——
+# 若 Nacos 中已配置 seata.yaml 则该块被覆盖；此处作 Nacos 不可用时的本地兜底。
+seata:
+  enabled: true
+  tx-service-group: cloud-user-service-group
+  registry:
+    type: file
+  config:
+    type: file
+  service:
+    vgroup-mapping:
+      cloud-user-service-group: default
+    grouplist:
+      default: ${SEATA_ADDR:127.0.0.1:8091}
+  enable-auto-data-source-proxy: true
+
+# MyBatis-Plus
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.cloud.user.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# Knife4j / OpenAPI3
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+  api-docs:
+    enabled: true
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+
+# Actuator / Prometheus
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  metrics:
+    tags:
+      application: ${spring.application.name}

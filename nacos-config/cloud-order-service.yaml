@@ -1,0 +1,27 @@
+# ============================================================
+# Nacos 配置 - cloud-order-service.yaml (Group: CLOUD_GROUP)
+# 订单服务特有配置
+# ============================================================
+server:
+  port: 8082
+
+spring:
+  application:
+    name: cloud-order-service
+
+# MyBatis-Plus（订单服务）
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.cloud.order.entity
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+
+# 订单服务业务参数
+order:
+  # 订单号前缀
+  prefix: ORD
+  # 订单自动取消时间（分钟）
+  auto-cancel-minutes: 30

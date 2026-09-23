@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.cloud</groupId>
+        <artifactId>cloud-visual</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>cloud-seata</artifactId>
+    <packaging>jar</packaging>
+    <name>cloud-seata</name>
+    <description>
+        Seata Server 本地启动项：seata-server 2.0.0 本身就是一个 Spring Boot Web 应用
+        （基于 Spring Boot 2.7.17），采用与 cloud-nacos / cloud-xxl-job / cloud-sentinel 同款的
+        「JVM 内嵌」思路，直接以 Spring Boot 应用方式拉起分布式事务协调器（TC）。
+        本模块仅依赖 seata-server 并覆盖 Spring Boot 版本到 2.7.17，避免与父工程的 Spring Boot 3.x 冲突。
+        启动类在透传参数前强制以 file 单机模式运行，无需外部 MySQL / 注册中心即可本地联调
+        （事务端口 8091，Seata 2.0 内置控制台默认 7091）。
+    </description>
+
+    <properties>
+        <!-- 覆盖父工程的 Spring Boot 3.x，落到 seata-server 所需的 2.7.17 -->
+        <spring-boot.version>2.7.17</spring-boot.version>
+        <seata.version>2.0.0</seata.version>
+        <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- 模块级显式导入 Spring Boot 2.7.17 BOM，优先级高于父工程继承的 3.2.5，使本模块全部 spring-* 回到 2.7.x -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- seata-server：Spring Boot Web 应用，作为普通依赖引入（制品为普通 jar，非 fat jar）；
+             其全部传递依赖由 2.7.17 BOM 统一版本，再由本模块 spring-boot-maven-plugin 重新打包成 fat jar -->
+        <dependency>
+            <groupId>io.seata</groupId>
+            <artifactId>seata-server</artifactId>
+            <version>${seata.version}</version>
+            <exclusions>
+                <!--
+                  ★ SLF4J 多重绑定修复（用户反馈 CloudSeata 启动 NoClassDefFoundError: org/apache/log4j/Level）
+                  依赖链：seata-server → seata-config-all → seata-config-zk → com.101tec:zkclient
+                          → org.apache.zookeeper:zookeeper:3.4.13 → org.slf4j:slf4j-reload4j:1.7.36
+                  同时 Spring Boot 2.7.17 自身带了 ch.qos.logback:logback-classic（另一个 binding）。
+                  两个 StaticLoggerBinder 同时存在：若 reload4j 的 binding 在 fat jar 嵌套类加载器下胜出，
+                  它会去加载 org.apache.log4j.Level（reload4j 是 log4j 1.x 桥接），但该路径在
+                  LaunchedURLClassLoader 下解析失败 → 抛出 NoClassDefFoundError。
+                  排除 slf4j-reload4j 后只保留 Spring Boot 原生的 logback，绑定冲突消除。
+                -->
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-reload4j</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!--
+          ★ 兜底：显式带回独立的 log4j 1.x 实现（非 slf4j 绑定，仅提供 org.apache.log4j.* 类）。
+          seata 把 zookeeper 原来的 slf4j-log4j12 + log4j:log4j 替换成了 slf4j-reload4j，
+          而 slf4j-reload4j 刚被上面排除。若 zkclient / zookeeper 仍有直接调用
+          org.apache.log4j.Logger / Level 的代码，排除后会出现 ClassNotFound；
+          这里补一个独立的 log4j:log4j:1.2.17 保证这些类存在（它本身不是 slf4j binding，
+          不会与 logback 产生新的多重绑定冲突）。
+        -->
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.17</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>${project.artifactId}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!-- 薄入口：模块自身类，再由它设置 file 单机模式后转发到 seata-server 的主类。
+                         注意：seata-server 2.0.0 是「普通 jar」（非 fat jar），应用类位于 jar 根路径，
+                         作为普通依赖即可被类加载器直接加载，无需解包，也不会有 ClassNotFound 问题。 -->
+                    <mainClass>com.cloud.visual.seata.CloudSeataApplication</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

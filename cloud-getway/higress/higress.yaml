@@ -1,0 +1,57 @@
+# ============================================================
+# Higress 网关路由配置 - Ingress
+# 部署到 K8s：kubectl apply -f higress.yaml
+# ============================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cloud-gateway
+  namespace: cloud
+  annotations:
+    higress.io/resource-definer: higress
+spec:
+  ingressClassName: higress
+  rules:
+    # 用户服务路由：/user/** -> cloud-user-service:8081
+    - host: cloud.example.com
+      http:
+        paths:
+          - path: /user
+            pathType: Prefix
+            backend:
+              service:
+                name: cloud-user-service
+                port:
+                  number: 8081
+
+    # 订单服务路由：/order/** -> cloud-order-service:8082
+    - host: cloud.example.com
+      http:
+        paths:
+          - path: /order
+            pathType: Prefix
+            backend:
+              service:
+                name: cloud-order-service
+                port:
+                  number: 8082
+---
+# ============================================================
+# Higress 跨域配置（Wasm 插件）
+# ============================================================
+apiVersion: extensions.higress.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: cloud-cors
+  namespace: higress-system
+spec:
+  priority: 100
+  targetRefs:
+    - kind: Gateway
+      group: gateway.networking.k8s.io
+      name: higress
+  config:
+    allow_origin: "*"
+    allow_methods: "GET,POST,PUT,DELETE,OPTIONS"
+    allow_headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,X-Trace-Id"
+    expose_headers: "Content-Length,Content-Range"

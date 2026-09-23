@@ -1,0 +1,13 @@
+# ============================================================
+# Nacos 配置 - rocketmq.yaml (Group: CLOUD_GROUP)
+# RocketMQ 消息队列配置
+# ============================================================
+rocketmq:
+  name-server: ${ROCKETMQ_NAMESRV:127.0.0.1:9876}
+  producer:
+    group: ${spring.application.name}-producer-group
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 2
+    retry-times-when-send-async-failed: 2
+  consumer:
+    group: ${spring.application.name}-consumer-group

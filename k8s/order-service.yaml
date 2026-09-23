@@ -1,0 +1,64 @@
+# ============================================================
+# K8s 部署 - 订单服务
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloud-order-service
+  namespace: cloud
+  labels:
+    app: cloud-order-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cloud-order-service
+  template:
+    metadata:
+      labels:
+        app: cloud-order-service
+    spec:
+      containers:
+        - name: cloud-order-service
+          image: cloud-order-service:1.0.0
+          ports:
+            - containerPort: 8082
+          env:
+            - name: NACOS_ADDR
+              value: "nacos.cloud:8848"
+            - name: MYSQL_HOST
+              value: "mysql.cloud"
+            - name: REDIS_HOST
+              value: "redis.cloud"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 1024Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloud-order-service
+  namespace: cloud
+spec:
+  selector:
+    app: cloud-order-service
+  ports:
+    - port: 8082
+      targetPort: 8082
+  type: ClusterIP

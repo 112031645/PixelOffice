@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.cloud</groupId>
+        <artifactId>cloud-visual</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>cloud-sentinel</artifactId>
+    <packaging>jar</packaging>
+    <name>cloud-sentinel</name>
+    <description>
+        Sentinel Dashboard 本地启动项（内置官方 sentinel-dashboard 1.8.6）。控制台 http://127.0.0.1:8080/
+        （默认账号 sentinel / sentinel，规则默认内存态，无需外部数据库）。
+
+        【为什么不用 Maven 依赖】
+        com.alibaba.csp:sentinel-dashboard 在 Maven Central 上并没有发布 1.8.x —— 那里只有
+        0.1.0 / 0.1.1 两个早期占位版本，直接依赖会 404（aliyun 等镜像是 Central 的镜像，同样没有）。
+        其官方制品是 GitHub Releases 上的可执行 fat jar：
+            https://github.com/alibaba/Sentinel/releases/download/1.8.6/sentinel-dashboard-1.8.6.jar
+
+        【本模块的装配方式】沿用 cloud-nacos 的「本地 jar + system scope + includeSystemScope」范式，
+        并把官方 fat jar 拆成两Parts，使类路径与官方发行版完全一致：
+          1) BOOT-INF/classes/** -> 重打包为 plain jar（类位于 jar 根，类加载器可直接加载，
+             这样薄壳里的 Class.forName("...SentinelApplication") 才找得到）
+             -> lib/sentinel-dashboard-1.8.6-classes.jar
+          2) BOOT-INF/lib/*.jar  -> 原样落盘到 lib/，共 45 个，版本即官方构建时使用的精确版本
+        ==&gt; 所有依赖都是 system scope，Maven 不做版本仲裁，故不再需要 SB 2.7.x 的 BOM 覆盖，
+            也不会与父工程的 Spring Boot 3.x 产生任何冲突。
+
+        实测该发行版基于 Spring Boot 2.5.12 / Spring Framework 5.3.18 / Tomcat 9.0.60。
+    </description>
+
+    <properties>
+        <sentinel.version>1.8.6</sentinel.version>
+        <!-- 与官方发行版内置的 Spring Boot 保持一致（2.5.12），避免 repackage 出的 launcher 与运行期 spring-boot 版本错配 -->
+        <sentinel.spring-boot.version>2.5.12</sentinel.spring-boot.version>
+        <!-- 注意：放在 ${project.basedir}/lib 而不是 src/main/resources/lib，
+             避免这些 jar 被当成资源原样拷进 BOOT-INF/classes（否则 fat jar 里会多出一份约 20MB 的无用副本） -->
+        <sentinel.lib.path>${project.basedir}/lib</sentinel.lib.path>
+        <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+        <!-- ==================================================================
+             一、Dashboard 自身应用类（由官方 fat jar 的 BOOT-INF/classes 重打包而来，类位于 jar 根）
+             ================================================================== -->
+        <dependency>
+            <groupId>com.alibaba.csp</groupId>
+            <artifactId>sentinel-dashboard</artifactId>
+            <version>${sentinel.version}</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/sentinel-dashboard-${sentinel.version}-classes.jar</systemPath>
+        </dependency>
+
+        <!-- ==================================================================
+             二、官方发行版自带的全部依赖（BOOT-INF/lib 原样拆出，共 45 个）
+                 坐标由各 jar 内 META-INF/maven/**/pom.properties 还原，版本为官方精确版本。
+                 全部 system scope + includeSystemScope=true：既出现在 IDEA 运行时的 classpath，
+                 也会被 spring-boot-maven-plugin 打进新 fat jar 的 BOOT-INF/lib。
+             ================================================================== -->
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.11</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/commons-codec-1.11.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <version>2.6</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/commons-lang-2.6.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <version>1.2</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/commons-logging-1.2.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
+            <artifactId>concurrentlinkedhashmap-lru</artifactId>
+            <version>1.4.2</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/concurrentlinkedhashmap-lru-1.4.2.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.83_noneautotype</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/fastjson-1.2.83_noneautotype.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpasyncclient</artifactId>
+            <version>4.1.3</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/httpasyncclient-4.1.3.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.13</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/httpclient-4.5.13.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+            <version>4.4.5</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/httpcore-4.4.5.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore-nio</artifactId>
+            <version>4.4.6</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/httpcore-nio-4.4.6.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>2.12.6</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/jackson-annotations-2.12.6.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.12.2</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/jackson-core-2.12.2.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.12.6.1</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/jackson-databind-2.12.6.1.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jdk8</artifactId>
+            <version>2.12.6</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/jackson-datatype-jdk8-2.12.6.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.12.6</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/jackson-datatype-jsr310-2.12.6.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-parameter-names</artifactId>
+            <version>2.12.6</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/jackson-module-parameter-names-2.12.6.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <version>1.3.5</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/jakarta.annotation-api-1.3.5.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jul-to-slf4j</artifactId>
+            <version>1.7.36</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/jul-to-slf4j-1.7.36.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.17</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/log4j-1.2.17.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>2.17.2</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/log4j-api-2.17.2.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-to-slf4j</artifactId>
+            <version>2.17.2</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/log4j-to-slf4j-2.17.2.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.2.11</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/logback-classic-1.2.11.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>1.2.11</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/logback-core-1.2.11.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.csp</groupId>
+            <artifactId>sentinel-api-gateway-adapter-common</artifactId>
+            <version>1.8.6</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/sentinel-api-gateway-adapter-common-1.8.6.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.csp</groupId>
+            <artifactId>sentinel-core</artifactId>
+            <version>1.8.6</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/sentinel-core-1.8.6.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.csp</groupId>
+            <artifactId>sentinel-datasource-extension</artifactId>
+            <version>1.8.6</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/sentinel-datasource-extension-1.8.6.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.csp</groupId>
+            <artifactId>sentinel-parameter-flow-control</artifactId>
+            <version>1.8.6</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/sentinel-parameter-flow-control-1.8.6.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.csp</groupId>
+            <artifactId>sentinel-transport-common</artifactId>
+            <version>1.8.6</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/sentinel-transport-common-1.8.6.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.csp</groupId>
+            <artifactId>sentinel-transport-simple-http</artifactId>
+            <version>1.8.6</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/sentinel-transport-simple-http-1.8.6.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.csp</groupId>
+            <artifactId>sentinel-web-servlet</artifactId>
+            <version>1.8.6</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/sentinel-web-servlet-1.8.6.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.32</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/slf4j-api-1.7.32.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.28</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/snakeyaml-1.28.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-aop</artifactId>
+            <version>5.3.18</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/spring-aop-5.3.18.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+            <version>5.3.18</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/spring-beans-5.3.18.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot</artifactId>
+            <version>2.5.12</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/spring-boot-2.5.12.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+            <version>2.5.12</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/spring-boot-autoconfigure-2.5.12.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>5.3.18</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/spring-context-5.3.18.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>5.3.18</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/spring-core-5.3.18.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-expression</artifactId>
+            <version>5.3.18</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/spring-expression-5.3.18.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jcl</artifactId>
+            <version>5.3.18</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/spring-jcl-5.3.18.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <version>5.3.18</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/spring-web-5.3.18.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <version>5.3.18</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/spring-webmvc-5.3.18.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-core</artifactId>
+            <version>9.0.60</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/tomcat-embed-core-9.0.60.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-el</artifactId>
+            <version>9.0.60</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/tomcat-embed-el-9.0.60.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-websocket</artifactId>
+            <version>9.0.60</version>
+            <scope>system</scope>
+            <systemPath>${sentinel.lib.path}/tomcat-embed-websocket-9.0.60.jar</systemPath>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>${project.artifactId}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${sentinel.spring-boot.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!-- 薄入口：模块自身类，再由它反射转发到 Sentinel Dashboard 的主类 -->
+                    <mainClass>com.cloud.visual.sentinel.CloudSentinelApplication</mainClass>
+                    <!-- 关键：把上面所有 system scope 的官方 jar 一并打进 fat jar 的 BOOT-INF/lib -->
+                    <includeSystemScope>true</includeSystemScope>
+                    <jvmArguments>
+                        --add-opens java.base/java.lang=ALL-UNNAMED
+                        --add-opens java.base/java.util=ALL-UNNAMED
+                        --add-opens java.base/java.lang.reflect=ALL-UNNAMED
+                    </jvmArguments>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

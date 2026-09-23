@@ -1,0 +1,42 @@
+# ============================================================
+# 订单服务 - bootstrap.yml
+# 连接 Nacos 配置中心，拉取数据源、Redis、Seata 等配置。
+# ============================================================
+spring:
+  application:
+    name: cloud-order-service
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+        namespace: ${NACOS_NAMESPACE:public}
+        group: CLOUD_GROUP
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+      config:
+        server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+        namespace: ${NACOS_NAMESPACE:public}
+        group: CLOUD_GROUP
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+        file-extension: yaml
+        shared-configs:
+          - data-id: common.yaml
+            group: CLOUD_GROUP
+            refresh: true
+          - data-id: mysql.yaml
+            group: CLOUD_GROUP
+            refresh: true
+          - data-id: redis.yaml
+            group: CLOUD_GROUP
+            refresh: true
+
+        extension-configs:
+          - data-id: cloud-order-service.yaml
+            group: CLOUD_GROUP
+            refresh: true
+          - data-id: rocketmq.yaml
+            group: CLOUD_GROUP
+            refresh: true

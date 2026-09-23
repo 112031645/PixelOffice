@@ -1,0 +1,33 @@
+# ============================================================
+# Nacos 配置 - cloud-user-service.yaml (Group: CLOUD_GROUP)
+# 用户服务特有配置
+# ============================================================
+server:
+  port: 8081
+
+spring:
+  application:
+    name: cloud-user-service
+
+# 用户服务独立的数据库（如需分库）
+# spring.datasource 已在 mysql.yaml 中配置
+
+# MyBatis-Plus（用户服务）
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.cloud.user.entity
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# 用户服务业务参数
+user:
+  cache:
+    expire-minutes: 30
+  register:
+    default-balance: 100.00

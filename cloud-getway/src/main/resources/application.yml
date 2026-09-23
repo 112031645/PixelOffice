@@ -1,0 +1,124 @@
+# ============================================================================
+# cloud-getway —— Spring Cloud Gateway 统一网关配置（端口 8080）
+# ----------------------------------------------------------------------------
+# 角色：本地所有微服务与中间件控制台的单一入口（等价于 k8s 里 Higress 的 8080）。
+# 说明：Higress 数据面基于 Envoy（Go/C++），无法像 Nacos/Sentinel 那样 JVM 内嵌，
+#       故本模块用 Spring Cloud Gateway（响应式 WebFlux，SB3 原生支持）作为等价实现。
+#
+# 路由规则：
+#   业务微服务：路径前缀 /user /order → StripPrefix=1 去掉前缀后转发（服务自身上下文为 /）
+#   中间件控制台：
+#     /nacos/**          → Nacos 控制台（自身上下文即 /nacos，StripPrefix=0 保留前缀）✓
+#     /xxl-job-admin/**  → XXL-Job Admin（上下文 /xxl-job-admin，保留前缀）✓
+#     /sentinel/**       → Sentinel 控制台（根上下文，StripPrefix=1）
+#     /seata/**          → Seata 控制台（根上下文，StripPrefix=1）
+#   ⚠️ Sentinel / Seata 控制台以根上下文部署，前端链接为绝对路径（/dashboard、/auth/login…），
+#      经 /sentinel、/seata 前缀访问时这些绝对链接会 404。生产/完整可用请改用下方 Host 路由
+#      （在 hosts 文件加 *.cloud.local → 127.0.0.1，用 http://sentinel.cloud.local:8080 访问）。
+# ============================================================================
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: cloud-getway
+  cloud:
+    gateway:
+      # —— 全局跨域（与 k8s Higress WasmPlugin 配置对齐）——
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+      routes:
+        # ===== 业务微服务（路径前缀，StripPrefix=1 去前缀后转发）=====
+        - id: user-service
+          uri: http://127.0.0.1:8081
+          predicates:
+            - Path=/user/**
+          filters:
+            - StripPrefix=1
+
+        - id: order-service
+          uri: http://127.0.0.1:8082
+          predicates:
+            - Path=/order/**
+          filters:
+            - StripPrefix=1
+
+        # ===== 中间件控制台 =====
+        # Nacos 控制台自身上下文即 /nacos，保留前缀（StripPrefix=0）
+        - id: nacos-console
+          uri: http://127.0.0.1:8848
+          predicates:
+            - Path=/nacos/**
+          filters:
+            - StripPrefix=0
+
+        # XXL-Job Admin 上下文 /xxl-job-admin，保留前缀
+        - id: xxl-job-admin
+          uri: http://127.0.0.1:9900
+          predicates:
+            - Path=/xxl-job-admin/**
+          filters:
+            - StripPrefix=0
+
+        # Sentinel 控制台根上下文，去掉 /sentinel 前缀
+        - id: sentinel-console
+          uri: http://127.0.0.1:8718
+          predicates:
+            - Path=/sentinel/**
+          filters:
+            - StripPrefix=1
+
+        # Seata 控制台根上下文，去掉 /seata 前缀
+        - id: seata-console
+          uri: http://127.0.0.1:7091
+          predicates:
+            - Path=/seata/**
+          filters:
+            - StripPrefix=1
+
+        # ===== Host 路由（备用：控制台根上下文绝对链接场景的完整可用方案）=====
+        # 在 C:\Windows\System32\drivers\etc\hosts 加：
+        #   127.0.0.1  user.cloud.local order.cloud.local nacos.cloud.local
+        #   127.0.0.1  xxl.cloud.local sentinel.cloud.local seata.cloud.local
+        # 然后访问 http://sentinel.cloud.local:8080 即为 Sentinel 控制台根上下文，链接全部正常。
+        - id: host-user
+          uri: http://127.0.0.1:8081
+          predicates:
+            - Host=user.cloud.local
+        - id: host-order
+          uri: http://127.0.0.1:8082
+          predicates:
+            - Host=order.cloud.local
+        - id: host-nacos
+          uri: http://127.0.0.1:8848
+          predicates:
+            - Host=nacos.cloud.local
+        - id: host-xxl
+          uri: http://127.0.0.1:9900
+          predicates:
+            - Host=xxl.cloud.local
+        - id: host-sentinel
+          uri: http://127.0.0.1:8718
+          predicates:
+            - Host=sentinel.cloud.local
+        - id: host-seata
+          uri: http://127.0.0.1:7091
+          predicates:
+            - Host=seata.cloud.local
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'

@@ -1,0 +1,9 @@
+# ============================================================
+# Nacos 配置 - minio.yaml (Group: CLOUD_GROUP)
+# MinIO 对象存储配置
+# ============================================================
+minio:
+  endpoint: http://${MINIO_HOST:127.0.0.1}:${MINIO_PORT:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  bucket: ${MINIO_BUCKET:cloud-bucket}

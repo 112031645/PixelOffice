@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.cloud</groupId>
+    <artifactId>cloud-framework</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>cloud-framework</name>
+    <description>Spring Cloud Alibaba 微服务框架</description>
+
+    <modules>
+        <module>cloud-common</module>
+        <module>cloud-api</module>
+        <module>cloud-modules</module>
+        <module>cloud-visual</module>
+        <module>cloud-getway</module>
+    </modules>
+
+    <properties>
+        <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Spring Boot -->
+        <spring-boot.version>3.2.5</spring-boot.version>
+        <!-- Spring Cloud -->
+        <spring-cloud.version>2023.0.1</spring-cloud.version>
+        <!-- Spring Cloud Alibaba -->
+        <spring-cloud-alibaba.version>2023.0.1.0</spring-cloud-alibaba.version>
+
+        <!-- 组件版本 -->
+        <mybatis-plus.version>3.5.5</mybatis-plus.version>
+        <mysql.version>8.0.33</mysql.version>
+        <druid.version>1.2.22</druid.version>
+        <redis.version>3.2.5</redis.version>
+        <!-- ★ 必须为 2.3.x：2.2.3 仅注册 META-INF/spring.factories（Spring Boot 2 风格），
+             在 Spring Boot 3 下不会被加载，导致 RocketMQAutoConfiguration 不生效、
+             RocketMQTemplate Bean 缺失（UserApplication 启动报 bean 找不到）。
+             2.3.5 改为注册 META-INF/spring/...AutoConfiguration.imports，兼容 SB3。 -->
+        <rocketmq.version>2.3.5</rocketmq.version>
+        <!-- ★ rocketmq-spring-boot 2.3.5 编译于 rocketmq-client 5.3.2；但 Spring Cloud Alibaba BOM
+             把整个 rocketmq-client 组钉在 5.1.4，版本错配会让 DefaultRocketMQListenerContainer
+             在启动期 NoSuchMethodError（与 DefaultMQPushConsumer 类层级不兼容）。此处显式对齐回 5.3.2。 -->
+        <rocketmq.client.version>5.3.2</rocketmq.client.version>
+        <minio.version>8.5.10</minio.version>
+        <hutool.version>5.8.27</hutool.version>
+        <knife4j.version>4.5.0</knife4j.version>
+        <fastjson2.version>2.0.49</fastjson2.version>
+        <jackson.version>2.16.1</jackson.version>
+        <seata.version>2.0.0</seata.version>
+        <skywalking.version>9.1.0</skywalking.version>
+        <prometheus.version>1.12.5</prometheus.version>
+        <rest-assured.version>5.4.0</rest-assured.version>
+        <dubbo.version>3.3.0</dubbo.version>
+        <xxl-job.version>2.4.0</xxl-job.version>
+        <grafana.version>10.2.0</grafana.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Spring Boot BOM -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Spring Cloud BOM -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Spring Cloud Alibaba BOM -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- 内部模块 -->
+            <dependency>
+                <groupId>com.cloud</groupId>
+                <artifactId>cloud-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.cloud</groupId>
+                <artifactId>cloud-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- MyBatis-Plus -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+
+            <!-- MySQL -->
+            <dependency>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
+                <version>${mysql.version}</version>
+            </dependency>
+
+            <!-- Druid -->
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>druid-spring-boot-3-starter</artifactId>
+                <version>${druid.version}</version>
+            </dependency>
+
+            <!-- Redis -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-redis</artifactId>
+                <version>${redis.version}</version>
+            </dependency>
+
+            <!-- RocketMQ -->
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-spring-boot-starter</artifactId>
+                <version>${rocketmq.version}</version>
+            </dependency>
+            <!-- RocketMQ 客户端版本对齐：覆盖 Spring Cloud Alibaba BOM 的 5.1.4，回退到
+                 rocketmq-spring-boot 2.3.5 编译所依赖的 5.3.2，消除类层级不兼容。 -->
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-client</artifactId>
+                <version>${rocketmq.client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-acl</artifactId>
+                <version>${rocketmq.client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-common</artifactId>
+                <version>${rocketmq.client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-remoting</artifactId>
+                <version>${rocketmq.client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-srvutil</artifactId>
+                <version>${rocketmq.client.version}</version>
+            </dependency>
+
+            <!-- MinIO -->
+            <dependency>
+                <groupId>io.minio</groupId>
+                <artifactId>minio</artifactId>
+                <version>${minio.version}</version>
+            </dependency>
+
+            <!-- Hutool -->
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-all</artifactId>
+                <version>${hutool.version}</version>
+            </dependency>
+
+            <!-- Knife4j (OpenAPI3) -->
+            <dependency>
+                <groupId>com.github.xiaoymin</groupId>
+                <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+                <version>${knife4j.version}</version>
+            </dependency>
+
+            <!-- Fastjson2 -->
+            <dependency>
+                <groupId>com.alibaba.fastjson2</groupId>
+                <artifactId>fastjson2</artifactId>
+                <version>${fastjson2.version}</version>
+            </dependency>
+
+            <!-- Seata -->
+            <dependency>
+                <groupId>io.seata</groupId>
+                <artifactId>seata-spring-boot-starter</artifactId>
+                <version>${seata.version}</version>
+            </dependency>
+
+            <!-- SkyWalking -->
+            <dependency>
+                <groupId>org.apache.skywalking</groupId>
+                <artifactId>apm-toolkit-trace</artifactId>
+                <version>${skywalking.version}</version>
+            </dependency>
+
+            <!-- Prometheus -->
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-registry-prometheus</artifactId>
+                <version>${prometheus.version}</version>
+            </dependency>
+
+            <!-- RestAssured 接口测试 -->
+            <dependency>
+                <groupId>io.rest-assured</groupId>
+                <artifactId>rest-assured</artifactId>
+                <version>${rest-assured.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- Dubbo -->
+            <dependency>
+                <groupId>org.apache.dubbo</groupId>
+                <artifactId>dubbo-spring-boot-starter</artifactId>
+                <version>${dubbo.version}</version>
+            </dependency>
+
+            <!-- XXL-Job 分布式任务调度 -->
+            <dependency>
+                <groupId>com.xuxueli</groupId>
+                <artifactId>xxl-job-core</artifactId>
+                <version>${xxl-job.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring-boot.version}</version>
+                    <configuration>
+                        <excludes>
+                            <exclude>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                            </exclude>
+                        </excludes>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.13.0</version>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                        <encoding>UTF-8</encoding>
+                        <!-- ★ 必须开启 -parameters：Spring 6.1（Spring Boot 3.2）已移除基于字节码的参数名发现，
+                             仅依赖编译器保留的方法参数名来解析 @RequestParam / @PathVariable 的隐式名称。
+                             本项目父工程用 spring-boot-dependencies BOM 而非 spring-boot-starter-parent，
+                             不会自动带 -parameters；不开启时调用接口会报
+                             「Name for argument of type [java.lang.Long] not specified ... '-parameters' flag」。 -->
+                        <parameters>true</parameters>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+    <!-- ====================================================================
+         默认命名空间（Nacos）：public / dev / prod
+         说明：
+           - public 是 Nacos 保留的默认命名空间（对应 ${NACOS_NAMESPACE:public} 的兜底值）；
+           - 默认不激活任何 profile，构建走 public；用 -P dev / -P prod 切换到对应环境；
+           - 各 profile 暴露 nacos.namespace（命名空间名）与 nacos.namespace.id（真实
+             命名空间 ID）。dev / prod 的 id 需替换为 Nacos 控制台创建命名空间后生成的
+             UUID（public 的 id 留空即可，Nacos 以空串表示默认空间）；
+           - 若要让 -P dev 真正作用于运行时，子模块 bootstrap.yml 需通过 Maven 资源
+             过滤引用 @nacos.namespace.id@（当前服务用的是 ${NACOS_NAMESPACE} 环境变量）。
+         ==================================================================== -->
+    <profiles>
+        <!-- 默认命名空间：public -->
+        <profile>
+            <id>public</id>
+            <properties>
+                <nacos.namespace>public</nacos.namespace>
+                <nacos.namespace.id></nacos.namespace.id>
+                <nacos.env>public</nacos.env>
+            </properties>
+        </profile>
+
+        <!-- 开发环境命名空间：dev（在 Nacos 控制台创建后，把下方面的 id 换成真实 UUID） -->
+        <profile>
+            <id>dev</id>
+            <properties>
+                <nacos.namespace>dev</nacos.namespace>
+                <nacos.namespace.id></nacos.namespace.id>
+                <nacos.env>dev</nacos.env>
+            </properties>
+        </profile>
+
+        <!-- 生产环境命名空间：prod（同上，替换 id 为真实 UUID） -->
+        <profile>
+            <id>prod</id>
+            <properties>
+                <nacos.namespace>prod</nacos.namespace>
+                <nacos.namespace.id></nacos.namespace.id>
+                <nacos.env>prod</nacos.env>
+            </properties>
+        </profile>
+    </profiles>
+</project>

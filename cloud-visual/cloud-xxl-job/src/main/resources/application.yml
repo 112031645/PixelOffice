@@ -1,0 +1,96 @@
+# ============================================================================
+# cloud-xxl-job —— xxl-job-admin 调度中心本地启动配置
+# ----------------------------------------------------------------------------
+# 本模块通过 JVM 内嵌方式拉起 xxl-job-admin 2.4.0（Spring Boot 2.7.17）。
+#
+# ★ 配置权威性问题（用户反馈「启动项没有使用 resources 里的 yml」）：
+#   xxl-job-admin 官方 fat jar 自带 application.properties（含 server.port=8080、
+#   spring.datasource、freemarker、mvc 等默认值），它被打进本模块的
+#   lib/xxl-job-admin-2.4.0-classes.jar 根路径，与本文件同时出现在 classpath 上，
+#   二者争用同一份配置、优先级互相打架，导致本 yml 被「忽略」。
+#   已将该 classes jar 内的 application.properties 与 logback.xml 剥离，
+#   因此【本 application.yml 现在是唯一的配置来源】，所有键均以此文件为准。
+#   若仍需 100% 覆盖（最高优先级），仍可用 IDEA 运行配置 VM options 的 -D 参数，
+#   例如 -Dspring.datasource.password=你的密码。
+# ============================================================================
+
+server:
+  # 调度中心端口与访问上下文；控制台地址：http://127.0.0.1:9900/xxl-job-admin
+  port: 9900
+  servlet:
+    context-path: /xxl-job-admin
+    # JSP 开发模式（xxl-job-admin 控制台为 JSP 页面）
+    jsp:
+      init-parameters:
+        development: true
+
+spring:
+  datasource:
+    # ⚠️ 改成你本机 MySQL 的实际地址 / 库名 / 账号 / 密码
+    # 建库：CREATE DATABASE IF NOT EXISTS xxl_job DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_general_ci;
+    # 建表：脚本在 xxl-job-admin jar 内 BOOT-INF/classes/tables_xxl_job.sql，
+    #       解包后位于本模块 target/classes/tables_xxl_job.sql，导入即可。
+    url: jdbc:mysql://127.0.0.1:3306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # —— 以下为原 xxl-job-admin application.properties 中的非默认值，剥离后在此补全，
+  #    保证 admin 控制台 Freemarker 页面 / 静态资源 / actuator 路径正常 ——
+  freemarker:
+    templateLoaderPath: classpath:/templates/
+    suffix: .ftl
+    charset: UTF-8
+    request-context-attribute: request
+    settings:
+      number_format: 0.##########
+  mvc:
+    servlet:
+      load-on-startup: 0
+    static-path-pattern: /static/**
+  resources:
+    static-locations: classpath:/static/
+
+  # —— JavaMailSender bean 来源（关键）——
+  #   xxl-job-admin 的 XxlJobAdminConfig 用 @Resource JavaMailSender 注入，
+  #   Spring 的 JavaMailSenderAutoConfiguration 仅在检测到 spring.mail.host 时才创建该 bean。
+  #   当初我们剥离 classes jar 内置的 application.properties 时，一并把它的 spring.mail.* 块
+  #   也删掉了，导致 bean 缺失、admin 启动报 NoSuchBeanDefinitionException。
+  #   此处补全（本地用占位 SMTP，邮件告警为可选功能，不影响调度中心核心运行）。
+  mail:
+    host: 127.0.0.1
+    port: 25
+    username: ""
+    password: ""
+    from: xxl-job@localhost
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+            required: false
+
+# MyBatis Mapper 位置（xxl-job-admin 自带，已随 fat jar 解包进 classpath）
+mybatis:
+  mapper-locations: classpath:/mybatis-mapper/*.xml
+
+# actuator（管理端点）上下文路径，与 xxl-job-admin 默认一致
+management:
+  server:
+    servlet:
+      context-path: /actuator
+  health:
+    mail:
+      enabled: false
+
+xxl:
+  job:
+    i18n: zh_CN                 # 国际化：zh_CN / en
+    accessToken: ""             # 调度中心接口令牌；客户端需配置一致的值，生产建议设置
+    triggerpool:
+      fast:
+        max: 200                # 快任务触发线程池上限
+      slow:
+        max: 100                # 慢任务触发线程池上限
+    logretentiondays: 30        # 调度日志保留天数，到期自动清理

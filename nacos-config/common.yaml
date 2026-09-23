@@ -1,0 +1,61 @@
+# ============================================================
+# Nacos 配置 - common.yaml (Group: CLOUD_GROUP)
+# 所有服务共享的公共配置：日志、Sentinel、Dubbo 注册中心等
+# ============================================================
+
+# ---------- 日志 ----------
+logging:
+  level:
+    root: info
+    com.cloud: debug
+    org.springframework: info
+    org.apache.dubbo: info
+    io.seata: info
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# ---------- Sentinel 流量防护 ----------
+spring:
+  cloud:
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:127.0.0.1:8858}
+        port: 8719
+      eager: true
+      datasource:
+        # 流控规则持久化到 Nacos
+        flow:
+          nacos:
+            server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+            namespace: ${NACOS_NAMESPACE:public}
+            data-id: ${spring.application.name}-flow-rules
+            group-id: SENTINEL_GROUP
+            data-type: json
+            rule-type: flow
+        # 降级规则
+        degrade:
+          nacos:
+            server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+            namespace: ${NACOS_NAMESPACE:public}
+            data-id: ${spring.application.name}-degrade-rules
+            group-id: SENTINEL_GROUP
+            data-type: json
+            rule-type: degrade
+
+# ---------- Dubbo ----------
+dubbo:
+  registry:
+    address: nacos://${NACOS_ADDR:127.0.0.1:8848}
+    parameters:
+      namespace: ${NACOS_NAMESPACE:public}
+      group: CLOUD_GROUP
+  protocol:
+    name: dubbo
+    port: -1
+  consumer:
+    timeout: 3000
+    retries: 0
+    check: false
+  provider:
+    timeout: 3000
+    retries: 0

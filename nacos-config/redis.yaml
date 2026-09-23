@@ -1,0 +1,18 @@
+# ============================================================
+# Nacos 配置 - redis.yaml (Group: CLOUD_GROUP)
+# Redis 缓存配置
+# ============================================================
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DB:0}
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+          max-wait: 3000ms
